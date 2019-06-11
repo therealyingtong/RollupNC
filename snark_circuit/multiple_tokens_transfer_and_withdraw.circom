@@ -52,6 +52,15 @@ template Main(n,m) {
     signal private input nonce_to[2**m]; // receiver account nonce
     signal private input amount[2**m]; // amount being transferred
 
+    // Fields for atomic swap
+    signal private input swap_ok[2**m];     // operator sets this flag if it tx is atomic 
+    signal private input swap_from_x[2**m]; // atomic swap tx from address x coordinate
+    signal private input swap_from_y[2**m]; // atomic swap tx from address y coordinate
+    signal private input swap_to_x[2**m];   // atomic swap tx to address x coordinate
+    signal private input swap_to_y[2**m];   // atomic swap tx to address y coordinate
+    signal private input swap_type[2**m];   // atomic swap tx token type
+    signal private input swap_amount[2**m]; // amount required in swap tx
+    
     signal private input token_balance_from[2**m]; // sender token balance
     signal private input token_balance_to[2**m]; // receiver token balance
     signal private input token_type_from[2**m]; // sender token type
@@ -67,6 +76,7 @@ template Main(n,m) {
     var ZERO_ADDRESS_X = 0000000000000000000000000000000000000000000000000000000000000000000000000000;
     var ZERO_ADDRESS_Y = 00000000000000000000000000000000000000000000000000000000000000000000000000000;
 
+    var swap_started = 0
     
     component txExistence[2**m - 1];
     component senderExistence[2**m - 1];
@@ -86,6 +96,8 @@ template Main(n,m) {
         txExistence[i].to_y <== to_y[i];
         txExistence[i].amount <== amount[i];
         txExistence[i].token_type_from <== token_type_from[i];
+	txExistence[i].swap_address <== swap_address[i];
+	txExistence[i].swap_amount <== swap_amount[i];
 
         txExistence[i].tx_root <== tx_root;
 
@@ -122,6 +134,40 @@ template Main(n,m) {
         if (to_x[i] != ZERO_ADDRESS_X && to_y[i] != ZERO_ADDRESS_Y){
             token_type_to[i] === token_type_from[i];
         }
+
+	// atomic swap checks
+	if (swap_started == 0) {
+	   // check if transaction depends on another
+	   if (swap_ok[i] && i < 2**m) {
+	       // constraint on from and to of dependent transaction
+   	       swap_from_x[i] === from_x[i+1];
+	       swap_from_y[i] === from_y[i+1];
+	       swap_to_x[i] === to_x[i+1];
+	       swap_to_y[i] === to_y[i+1];
+
+	       // constraint on token type and amount
+	       swap_type[i] === token_type_from[i+1];
+               swap_type[i] === token_type_to[i+1];
+	       swap_amount[i] === amount[i+1];
+
+               swap_started = 1;
+           }
+	} else {
+	    if (swap_ok[i] && i < 2**m){
+	       // constraint on from and to of dependent transaction
+   	       swap_from_x[i] === from_x[i-1];
+	       swap_from_y[i] === from_y[i-1];
+	       swap_to_x[i] === to_x[i-1];
+	       swap_to_y[i] === to_y[i-1];
+
+	       // constraint on token type and amount
+	       swap_type[i] === token_type_from[i-1];
+               swap_type[i] === token_type_to[i-1];
+	       swap_amount[i] === amount[i-1];
+
+               swap_started = 0;
+            }      
+	}
 
         // subtract amount from sender balance; increase sender nonce 
         newSender[i] = BalanceLeaf();

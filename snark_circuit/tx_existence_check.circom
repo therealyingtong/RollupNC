@@ -11,6 +11,8 @@ template TxExistence(k){
     signal input to_y;
     signal input amount;
     signal input token_type_from;
+    signal input swap_address;
+    signal input swap_amount;
 
     signal input tx_root;
     signal input paths2_root_pos[k];
@@ -27,6 +29,8 @@ template TxExistence(k){
     txLeaf.to_y <== to_y; 
     txLeaf.amount <== amount;
     txLeaf.token_type_from <== token_type_from;
+    txLeaf.swap_address <== swap_address;
+    txLeaf.swap_amount <== swap_amount;
 
     component txExistence = LeafExistence(k);
     txExistence.leaf <== txLeaf.out;
