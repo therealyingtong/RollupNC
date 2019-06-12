@@ -5,6 +5,7 @@ include "./tx_existence_check.circom";
 include "./balance_existence_check.circom";
 include "./balance_leaf.circom";
 include "./get_merkle_root.circom";
+include "./swap_check.circom";
 
 template Main(n,m) {
 // n is depth of balance tree
@@ -80,6 +81,7 @@ template Main(n,m) {
     
     component txExistence[2**m - 1];
     component senderExistence[2**m - 1];
+    component swapChecker[2**m];
     component newSender[2**m - 1];
     component merkle_root_from_new_sender[2**m - 1];
     component receiverExistence[2**m - 1];
@@ -96,7 +98,12 @@ template Main(n,m) {
         txExistence[i].to_y <== to_y[i];
         txExistence[i].amount <== amount[i];
         txExistence[i].token_type_from <== token_type_from[i];
-	txExistence[i].swap_address <== swap_address[i];
+	txExistence[i].swap_ok <== swap_ok[i];
+	txExistence[i].swap_from_x <== swap_from_x[i];
+	txExistence[i].swap_from_y <== swap_from_y[i];
+	txExistence[i].swap_to_x <== swap_to_x[i];
+	txExistence[i].swap_to_y <== swap_to_y[i];
+	txExistence[i].swap_type <== swap_type[i];
 	txExistence[i].swap_amount <== swap_amount[i];
 
         txExistence[i].tx_root <== tx_root;
@@ -136,34 +143,44 @@ template Main(n,m) {
         }
 
 	// atomic swap checks
+	swapChecker[i] = SwapCheck();
+	
 	if (swap_started == 0) {
-	   // check if transaction depends on another
-	   if (swap_ok[i] && i < 2**m) {
-	       // constraint on from and to of dependent transaction
-   	       swap_from_x[i] === from_x[i+1];
-	       swap_from_y[i] === from_y[i+1];
-	       swap_to_x[i] === to_x[i+1];
-	       swap_to_y[i] === to_y[i+1];
+	 // either this is not an atomic swap or the first of a pair.
+	   if (swap_ok[i]){
+	       swapChecker[i].swap_from_x <== swap_from_x[i];
+	       swapChecker[i].swap_from_y <== swap_from_y[i];
+	       swapChecker[i].swap_to_x <== swap_to_x[i];
+	       swapChecker[i].swap_to_y <== swap_to_y[i];
+	       swapChecker[i].swap_token_type <== swap_type[i];
+	       swapChecker[i].swap_amount <== swap_amount[i];
 
-	       // constraint on token type and amount
-	       swap_type[i] === token_type_from[i+1];
-               swap_type[i] === token_type_to[i+1];
-	       swap_amount[i] === amount[i+1];
+	       swapChecker[i].tx_from_x <== from_x[i+1];
+	       swapChecker[i].tx_from_y <== from_y[i+1]
+	       swapChecker[i].tx_to_x <== to_x[i+1];
+	       swapChecker[i].tx_to_y <== to_y[i+1];
+	       swapChecker[i].tx_token_type <== token_type_from[i+1]
+	       swapChecker[i].tx_amount <== amount[i+1];
 
                swap_started = 1;
            }
 	} else {
-	    if (swap_ok[i] && i < 2**m){
-	       // constraint on from and to of dependent transaction
-   	       swap_from_x[i] === from_x[i-1];
-	       swap_from_y[i] === from_y[i-1];
-	       swap_to_x[i] === to_x[i-1];
-	       swap_to_y[i] === to_y[i-1];
+	  // this is the second of a pair of atomic swaps
+	    if (i > 0){
+	       swapChecker[i] = SwapCheck();
+	       swapChecker[i].swap_from_x <== swap_from_x[i];
+	       swapChecker[i].swap_from_y <== swap_from_y[i];
+	       swapChecker[i].swap_to_x <== swap_to_x[i];
+	       swapChecker[i].swap_to_y <== swap_to_y[i];
+	       swapChecker[i].swap_token_type <== swap_type[i];
+	       swapChecker[i].swap_amount <== swap_amount[i];
 
-	       // constraint on token type and amount
-	       swap_type[i] === token_type_from[i-1];
-               swap_type[i] === token_type_to[i-1];
-	       swap_amount[i] === amount[i-1];
+	       swapChecker[i].tx_from_x <== from_x[i-1];
+	       swapChecker[i].tx_from_y <== from_y[i-1];
+	       swapChecker[i].tx_to_x <== to_x[i-1];
+	       swapChecker[i].tx_to_y <== to_y[i-1];
+	       swapChecker[i].tx_token_type <== token_type_from[i-1]
+	       swapChecker[i].tx_amount <== amount[i-1];
 
                swap_started = 0;
             }      
@@ -273,6 +290,24 @@ template Main(n,m) {
     // check token types for non-withdraw transfers
     if (to_x[2**m - 1] != ZERO_ADDRESS_X && to_y[2**m - 1] != ZERO_ADDRESS_Y){
         token_type_to[2**m - 1] === token_type_from[2**m - 1];
+    }
+
+    // atomic swap check
+    if (swap_started == 1) {
+        swapChecker[i] = SwapCheck();
+	swapChecker[i].swap_from_x <== swap_from_x[i];
+	swapChecker[i].swap_from_y <== swap_from_y[i];
+	swapChecker[i].swap_to_x <== swap_to_x[i];
+	swapChecker[i].swap_to_y <== swap_to_y[i];
+	swapChecker[i].swap_token_type <== swap_type[i];
+	swapChecker[i].swap_amount <== swap_amount[i];
+
+	swapChecker[i].tx_from_x <== from_x[i-1];
+	swapChecker[i].tx_from_y <== from_y[i-1]
+	swapChecker[i].tx_to_x <== to_x[i-1];
+	swapChecker[i].tx_to_y <== to_y[i-1];
+	swapChecker[i].tx_token_type <== token_type_from[i-1]
+	swapChecker[i].tx_amount <== amount[i-1];
     }
 
     // update final sender leaf

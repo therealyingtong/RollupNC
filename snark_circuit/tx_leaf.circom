@@ -20,7 +20,7 @@ template TxLeaf() {
 
     signal output out;
 
-    component txLeaf = MultiMiMC7(6,91);
+    component txLeaf = MultiMiMC7(13,91);
     txLeaf.in[0] <== from_x;
     txLeaf.in[1] <== from_y;
     txLeaf.in[2] <== to_x;

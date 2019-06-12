@@ -3,7 +3,7 @@ include "./leaf_existence.circom";
 include "../circomlib/circuits/eddsamimc.circom";
 
 template TxExistence(k){
-// m is depth of tx tree
+// k is depth of tx tree
 
     signal input from_x;
     signal input from_y;
@@ -11,8 +11,16 @@ template TxExistence(k){
     signal input to_y;
     signal input amount;
     signal input token_type_from;
-    signal input swap_address;
-    signal input swap_amount;
+
+
+    // atomic swap inputs
+    signal private input swap_ok;     // operator sets this flag if it tx is atomic 
+    signal private input swap_from_x; // atomic swap tx from address x coordinate
+    signal private input swap_from_y; // atomic swap tx from address y coordinate
+    signal private input swap_to_x;   // atomic swap tx to address x coordinate
+    signal private input swap_to_y;   // atomic swap tx to address y coordinate
+    signal private input swap_type;   // atomic swap tx token type
+    signal private input swap_amount; // amount required in swap tx
 
     signal input tx_root;
     signal input paths2_root_pos[k];
@@ -29,8 +37,13 @@ template TxExistence(k){
     txLeaf.to_y <== to_y; 
     txLeaf.amount <== amount;
     txLeaf.token_type_from <== token_type_from;
-    txLeaf.swap_address <== swap_address;
-    txLeaf.swap_amount <== swap_amount;
+    txLeaf.swap_ok <== swap_ok;
+    txLeaf.swap_from_x <== swap_from_x;
+    txLeaf.swap_from_y <== swap_from_y;
+    txLeaf.swap_to_x <== swap_to_x;
+    txLeaf.swap_to_y <== swap_to_y;
+    txLeaf.swap_type <== swap_type;
+    txLeaf.swap_amount <== swap_amount;    
 
     component txExistence = LeafExistence(k);
     txExistence.leaf <== txLeaf.out;
