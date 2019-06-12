@@ -156,10 +156,10 @@ template Main(n,m) {
 	       swapChecker[i].swap_amount <== swap_amount[i];
 
 	       swapChecker[i].tx_from_x <== from_x[i+1];
-	       swapChecker[i].tx_from_y <== from_y[i+1]
+	       swapChecker[i].tx_from_y <== from_y[i+1];
 	       swapChecker[i].tx_to_x <== to_x[i+1];
 	       swapChecker[i].tx_to_y <== to_y[i+1];
-	       swapChecker[i].tx_token_type <== token_type_from[i+1]
+	       swapChecker[i].tx_token_type <== token_type_from[i+1];
 	       swapChecker[i].tx_amount <== amount[i+1];
 
                swap_started = 1;
@@ -179,7 +179,7 @@ template Main(n,m) {
 	       swapChecker[i].tx_from_y <== from_y[i-1];
 	       swapChecker[i].tx_to_x <== to_x[i-1];
 	       swapChecker[i].tx_to_y <== to_y[i-1];
-	       swapChecker[i].tx_token_type <== token_type_from[i-1]
+	       swapChecker[i].tx_token_type <== token_type_from[i-1];
 	       swapChecker[i].tx_amount <== amount[i-1];
 
                swap_started = 0;
@@ -294,20 +294,20 @@ template Main(n,m) {
 
     // atomic swap check
     if (swap_started == 1) {
-        swapChecker[i] = SwapCheck();
-	swapChecker[i].swap_from_x <== swap_from_x[i];
-	swapChecker[i].swap_from_y <== swap_from_y[i];
-	swapChecker[i].swap_to_x <== swap_to_x[i];
-	swapChecker[i].swap_to_y <== swap_to_y[i];
-	swapChecker[i].swap_token_type <== swap_type[i];
-	swapChecker[i].swap_amount <== swap_amount[i];
+        swapChecker[2**m - 1] = SwapCheck();
+	swapChecker[2**m - 1].swap_from_x <== swap_from_x[2**m - 1];
+	swapChecker[2**m - 1].swap_from_y <== swap_from_y[2**m - 1];
+	swapChecker[2**m - 1].swap_to_x <== swap_to_x[2**m - 1];
+	swapChecker[2**m - 1].swap_to_y <== swap_to_y[2**m - 1];
+	swapChecker[2**m - 1].swap_token_type <== swap_type[2**m - 1];
+	swapChecker[2**m - 1].swap_amount <== swap_amount[2**m - 1];
 
-	swapChecker[i].tx_from_x <== from_x[i-1];
-	swapChecker[i].tx_from_y <== from_y[i-1]
-	swapChecker[i].tx_to_x <== to_x[i-1];
-	swapChecker[i].tx_to_y <== to_y[i-1];
-	swapChecker[i].tx_token_type <== token_type_from[i-1]
-	swapChecker[i].tx_amount <== amount[i-1];
+	swapChecker[2**m - 1].tx_from_x <== from_x[2**m - 2];
+	swapChecker[2**m - 1].tx_from_y <== from_y[2**m - 2];
+	swapChecker[2**m - 1].tx_to_x <== to_x[2**m - 2];
+	swapChecker[2**m - 1].tx_to_y <== to_y[2**m - 2];
+	swapChecker[2**m - 1].tx_token_type <== token_type_from[2**m - 2];
+	swapChecker[2**m - 1].tx_amount <== amount[2**m - 2];
     }
 
     // update final sender leaf
