@@ -1,10 +1,12 @@
 include "../circomlib/circuits/mimc.circom";
 include "../circomlib/circuits/eddsamimc.circom";
 include "../circomlib/circuits/bitify.circom";
+include "../circomlib/circuits/comparators.circom";
 include "./tx_existence_check.circom";
 include "./balance_existence_check.circom";
 include "./balance_leaf.circom";
 include "./get_merkle_root.circom";
+include "./if-gadgets.circom";
 
 template Main(n,m) {
 // n is depth of balance tree
@@ -75,7 +77,7 @@ template Main(n,m) {
     component receiverExistence[2**m - 1];
     component newReceiver[2**m - 1];
     component merkle_root_from_new_receiver[2**m - 1];
-
+    component ifBothHighForceEqual[2**m -1];
 
     current_state === intermediate_roots[0];
 
@@ -117,15 +119,18 @@ template Main(n,m) {
         }
     
         // balance checks
+	// TODO fix cmp
         token_balance_from[i] - amount[i] <= token_balance_from[i];
         token_balance_to[i] + amount[i] >= token_balance_to[i];
 
         nonce_from[i] != NONCE_MAX_VALUE;
 
         // check token types for non-withdraw transfers
-        if (to_x[i] != ZERO_ADDRESS_X && to_y[i] != ZERO_ADDRESS_Y){
-            token_type_to[i] === token_type_from[i];
-        }
+	ifBothHighForceEqual[2*i] = IfBothHighForceEqual();
+	ifBothHighForceEqual[2*i].to_x <== to_x[i];
+	ifBothHighForceEqual[2*i].to_y <== to_y[i];
+	ifBothHighForceEqual[2*i].a <== token_type_to[i];
+	ifBothHighForceEqual[2*i].b <== token_type_from[i];	
 
         // subtract amount from sender balance; increase sender nonce 
         newSender[i] = BalanceLeaf();
@@ -165,9 +170,11 @@ template Main(n,m) {
         newReceiver[i] = BalanceLeaf();
         newReceiver[i].x <== to_x[i];
         newReceiver[i].y <== to_y[i];
+	// TODO fix if connecting signals
         if (to_x[i] == ZERO_ADDRESS_X && to_y[i] == ZERO_ADDRESS_Y){
             newReceiver[i].token_balance <== token_balance_to[i];
         }
+	// TODO fix if connecting signals
         if (to_x[i] != ZERO_ADDRESS_X && to_y[i] != ZERO_ADDRESS_Y){
             newReceiver[i].token_balance <== token_balance_to[i] + amount[i];
         }
@@ -224,15 +231,19 @@ template Main(n,m) {
     }
 
     // final balance checks
+    // TODO fix cmp	    
     token_balance_from[2**m - 1] - amount[2**m - 1] <= token_balance_from[2**m - 1];
     token_balance_to[2**m - 1] + amount[2**m - 1] >= token_balance_to[2**m - 1];
 
+    // TODO fix cmp
     nonce_from[2**m - 1] != NONCE_MAX_VALUE;
 
     // check token types for non-withdraw transfers
-    if (to_x[2**m - 1] != ZERO_ADDRESS_X && to_y[2**m - 1] != ZERO_ADDRESS_Y){
-        token_type_to[2**m - 1] === token_type_from[2**m - 1];
-    }
+    component finalIfBothHighForceEqual = IfBothHighForceEqual();
+    finalIfBothHighForceEqual.to_x <== to_x[2**m -1];
+    finalIfBothHighForceEqual.to_y <== to_y[2**m -1];
+    finalIfBothHighForceEqual.a <== token_type_to[2**m - 1];
+    finalIfBothHighForceEqual.b <== token_type_from[2**m - 1];	    
 
     // update final sender leaf
     component new_final_sender = BalanceLeaf();
@@ -270,9 +281,11 @@ template Main(n,m) {
     component new_final_receiver = BalanceLeaf();
     new_final_receiver.x <== to_x[2**m - 1];
     new_final_receiver.y <== to_y[2**m - 1];
+    // TODO fix if connecting signals
     if (to_x[2**m - 1] == ZERO_ADDRESS_X && to_y[2**m - 1] == ZERO_ADDRESS_Y){
         new_final_receiver.token_balance <== token_balance_to[2**m - 1];
     }
+    // TODO fix if connecting signals
     if (to_x[2**m - 1] != ZERO_ADDRESS_X && to_y[2**m - 1] != ZERO_ADDRESS_Y){
         new_final_receiver.token_balance <== token_balance_to[2**m - 1] + amount[2**m - 1];
     }
