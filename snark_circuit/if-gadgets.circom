@@ -42,7 +42,7 @@ template AllLow(k) {
     	isz[i] = IsZero();
         isz[i].in <== in[i];
 	allHigh.in[i] <== isz[i].out;
-    }
+    }                                                            
     out <== allHigh.out;
 }
 
