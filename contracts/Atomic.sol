@@ -16,14 +16,24 @@ contract Atomic is AtomicVerifier {
     
     uint256 public currentRoot;
 
-    /* nice to have: deposit
 
     bytes32[] public currentDeposits;
     uint[] public pendingDeposits;
     uint public cdLength = 0;
 
-     function deposit(uint pk1) public {
-        pendingDeposits.push(pk1);
+    event RequestDeposit(uint acctHash);
+
+
+    constructor(
+        uint256 _emptyRoot
+    ) public {
+        currentRoot = _emptyRoot;
+    }
+
+    function deposit(uint acctHash) public {
+        pendingDeposits.push(acctHash);
+        emit RequestDeposit(acctHash);
+
         if(pendingDeposits.length % 2 == 0){
             bytes32 cd = keccak256(abi.encodePacked(pendingDeposits[0], pendingDeposits[1]));
             delete pendingDeposits;
@@ -38,13 +48,18 @@ contract Atomic is AtomicVerifier {
         }
     }
 
-    */
+    function processDeposits(uint height) public {
+        // 1. check that currentRoot = zeroCache[height]
+        // 2. replace currentRoot with currentDeposits[0]
+    }
+
     
     function updateState(
             uint[2] memory a,
             uint[2][2] memory b,
             uint[2] memory c,
-            uint[3] memory input // TODO: include tx deltas into input
+            uint[3] memory input // inputs: newRoot, txRoot, oldRoot
+            // TODO: include tx deltas into input
             // tx deltas: from, to, amt, nonce, type, atom_from, atom_to, atom_amt, atom_type
         ) public {
         require(currentRoot == input[2], "input does not match current root");
