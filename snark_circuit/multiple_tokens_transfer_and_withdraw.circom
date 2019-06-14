@@ -77,6 +77,11 @@ template Main(n,m) {
     component receiverExistence[2**m - 1];
     component newReceiver[2**m - 1];
     component merkle_root_from_new_receiver[2**m - 1];
+    component ifBothHighForceEqual[2**m -1];
+    component allLow[2**m -1];
+    component ifThenElse[2**m -1];
+
+    current_state === intermediate_roots[0];
 
     component ifBothHighForceEqual[2**m -1];
     component allLow[2**m -1];
@@ -90,6 +95,7 @@ template Main(n,m) {
         txExistence[i].from_y <== from_y[i];
         txExistence[i].to_x <== to_x[i];
         txExistence[i].to_y <== to_y[i];
+        txExistence[i].nonce <== nonce_from[i];
         txExistence[i].amount <== amount[i];
         txExistence[i].token_type_from <== token_type_from[i];
 
@@ -203,6 +209,7 @@ template Main(n,m) {
     finalTxExistence.from_y <== from_y[2**m - 1];
     finalTxExistence.to_x <== to_x[2**m - 1];
     finalTxExistence.to_y <== to_y[2**m - 1];
+    finalTxExistence.nonce <== nonce_from[2**m - 1];
     finalTxExistence.amount <== amount[2**m - 1];
     finalTxExistence.token_type_from <== token_type_from[2**m - 1];
 
@@ -311,4 +318,4 @@ template Main(n,m) {
 
 }
 
-component main = Main(2,2);
+component main = Main(4,2);
