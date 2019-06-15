@@ -278,4 +278,4 @@ template Main(n,m) {
 
 }
 
-component main = Main(4,2);
+component main = Main(2,1);

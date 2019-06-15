@@ -7,8 +7,8 @@ const merkle = require("../utils/MiMCMerkle.js")
 const update = require("../utils/update.js")
 const eddsa = require("../circomlib/src/eddsa.js");
 
-const TX_DEPTH = 2
-const BAL_DEPTH = 4
+const TX_DEPTH = 1
+const BAL_DEPTH = 2
 
 // get empty tree hashes
 const zeroLeaf = balanceLeaf.zeroLeaf()
@@ -17,17 +17,17 @@ const zeroCache = merkle.getZeroCache(zeroLeafHash, BAL_DEPTH)
 
 // console.log(merkle.getZeroCache(zeroLeafHash, 5))
 // generate Coordinator, A, B, C, D, E, F accounts with the following parameters
-const num_accts = 7;
+const num_accts = 4;
 const prvKeys = account.generatePrvKeys(num_accts);
-const zeroPubKey = account.zeroAddress()
+//const zeroPubKey = account.zeroAddress()
 const pubKeys = account.generatePubKeys(prvKeys);
-pubKeys.unshift(zeroPubKey)
+//pubKeys.unshift(zeroPubKey)
 
-// console.log('pubkeys', pubKeys)
+console.log('pubkeys', pubKeys)
 
-const token_types = [0, 0, 2, 1, 2, 1, 2, 1];
-const balances = [0, 0, 1000, 20, 200, 100, 500, 20];
-const nonces = [0, 0, 0, 0, 0, 0, 0, 0];
+const token_types = [1,1,1,1];
+const balances = [1000, 20, 200, 100];
+const nonces = [0, 0, 0, 0];
 
 // generate balance leaves for user accounts
 const balanceLeafArray = balanceLeaf.generateBalanceLeafArray(
@@ -36,7 +36,7 @@ const balanceLeafArray = balanceLeaf.generateBalanceLeafArray(
     token_types, balances, nonces
 )
 
-const first4BalanceLeafArray = balanceLeafArray.slice(0,4)
+/*const first4BalanceLeafArray = balanceLeafArray.slice(0,4)
 const first4BalanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(first4BalanceLeafArray)
 const first4SubtreeRoot = merkle.rootFromLeafArray(first4BalanceLeafArrayHash)
 console.log('first4SubtreeRoot', first4SubtreeRoot)
@@ -48,41 +48,46 @@ const paddedTo16BalanceLeafArray = merkle.padLeafHashArray(balanceLeafArray, zer
 const paddedTo16BalanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(paddedTo16BalanceLeafArray)
 const balanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(balanceLeafArray)
 const paddedBalanceLeafArrayHash = merkle.padLeafHashArray(balanceLeafArrayHash, zeroLeafHash)
+
 const height = merkle.getBase2Log(paddedBalanceLeafArrayHash.length)
 const nonEmptySubtreeRoot = merkle.rootFromLeafArray(paddedBalanceLeafArrayHash)
 console.log('nonEmptySubtreeRoot', nonEmptySubtreeRoot)
 const subtreeProof = merkle.getProofEmpty(height, zeroCache)
 console.log('subtreeProof', subtreeProof)
 const root = merkle.rootFromLeafAndPath(nonEmptySubtreeRoot, 0, subtreeProof)
-const rootCheck = merkle.rootFromLeafArray(paddedTo16BalanceLeafArrayHash)
+/*const rootCheck = merkle.rootFromLeafArray(paddedTo16BalanceLeafArrayHash)
 console.log('balance tree root', root)
-console.log('balance tree root check', rootCheck)
+console.log('balance tree root check', rootCheck)*/
 
 // const testFilledArray = merkle.fillLeafArray(balanceLeafArrayHash, zeroLeafHash, 10)
 // console.log(merkle.rootFromLeafArray(testFilledArray))
 
 // generate tx's: 
 // 1. Alice --500--> Charlie , 
-// 2. Charlie --200--> withdraw,
-// 3. Bob --10--> Daenerys,
-// 4. empty tx (operator --0--> withdraw)
+// 2. Daenerys --50--> Bob,
 
-from_accounts_idx = [2, 4, 3, 1]
+from_accounts_idx = [0, 3]
 from_accounts = update.pickByIndices(pubKeys, from_accounts_idx)
 
-to_accounts_idx = [4, 0, 5, 0]
+to_accounts_idx = [2, 1]
 to_accounts = update.pickByIndices(pubKeys, to_accounts_idx)
 
 from_x = account.getPubKeysX(from_accounts)
 from_y = account.getPubKeysY(from_accounts)
 to_x = account.getPubKeysX(to_accounts)
 to_y = account.getPubKeysY(to_accounts)
-const amounts = [500, 200, 10, 0]
-const tx_token_types = [2, 2, 1, 0]
-const tx_nonces = [0, 0, 0, 0]
+const amounts = [500, 50]
+const tx_token_types = [1, 1]
+const tx_nonces = [0, 0]
+const swap_from_x = [0,0]
+const swap_from_y = [0,0]
+const swap_to_x = [0,0]
+const swap_to_y = [0,0]
+const swap_amount = [0,0]
+const swap_token_type = [0,0]
 
 const txArray = txLeaf.generateTxLeafArray(
-    from_x, from_y, to_x, to_y, tx_nonces, amounts, tx_token_types
+    from_x, from_y, to_x, to_y, tx_nonces, amounts, tx_token_types, swap_from_x, swap_from_y, swap_to_x, swap_to_y, swap_amount, swap_token_type
 )
 
 const txLeafHashes = txLeaf.hashTxLeafArray(txArray)
@@ -100,7 +105,7 @@ for (jj = 0; jj < 2**TX_DEPTH; jj++){
 
 signingPrvKeys = new Array()
 from_accounts_idx.forEach(function(index){
-    signingPrvKeys.push(prvKeys[index - 1])
+    signingPrvKeys.push(prvKeys[index])
 })
 
 const signatures = txLeaf.signTxLeafHashArray(
@@ -118,12 +123,19 @@ const inputs = update.processTxArray(
     TX_DEPTH,
     BAL_DEPTH,
     pubKeys,
-    paddedTo16BalanceLeafArray,
+    //paddedTo16BalanceLeafArray,
+    balanceLeafArray,
     from_accounts_idx,
     to_accounts_idx,
     tx_nonces,
     amounts,
     tx_token_types,
+    swap_from_x,
+    swap_from_y,
+    swap_to_x,
+    swap_to_y,
+    swap_amount,
+    swap_token_type,	    
     signatures
 )
 

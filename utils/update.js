@@ -20,12 +20,18 @@ module.exports = {
         tx_nonces,
         amounts,
         tx_token_types,
+	tx_swap_from_x,
+	tx_swap_from_y,
+	tx_swap_to_x,
+	tx_swap_to_y,
+	tx_swap_amount,
+	tx_swap_token_type,	
         signatures,
     ){
 
         txPosArray = merkle.generateMerklePosArray(tx_depth)
 
-        intermediateRoots = new Array(2**(tx_depth+1))
+        intermediateRoots = new Array(2**(tx_depth+1)+1)
 
         fromProofs = new Array(2**tx_depth)
         newToProofs = new Array(2**tx_depth)
@@ -56,7 +62,7 @@ module.exports = {
         tokenTypeToArray = new Array(2**tx_depth)
 
         const txArray = txLeaf.generateTxLeafArray(
-            from_x, from_y, to_x, to_y, tx_nonces, amounts, tx_token_types
+            from_x, from_y, to_x, to_y, tx_nonces, amounts, tx_token_types, tx_swap_from_x, tx_swap_from_y, tx_swap_to_x, tx_swap_to_y, tx_swap_amount,	tx_swap_token_type
         )
 
         const txLeafHashes = txLeaf.hashTxLeafArray(txArray)
@@ -76,7 +82,7 @@ module.exports = {
         intermediateRoots[0] = originalState
 
         for (k = 0; k < 2**tx_depth; k++){
-
+	    console.log('from_accounts_idx', from_accounts_idx)
             nonceFromArray[k] = balanceLeafArrayReceiver[from_accounts_idx[k]]['nonce']
             nonceToArray[k] = balanceLeafArrayReceiver[to_accounts_idx[k]]['nonce']
     
@@ -96,9 +102,9 @@ module.exports = {
                 balanceLeafArrayReceiver,
                 fromProofs[k], intermediateRoots[2*k]
             )
-
+	    
             intermediateRoots[2*k + 1] = output['newRootSender'] ;
-            intermediateRoots[2*k + 2] = output['newRootReceiver'] ;
+            intermediateRoots[2*k + 2] = output['newRootReceiver'];
             balanceTreeSender = output['newTreeSender'];
             balanceTreeReceiver = output['newTreeReceiver'];
 
@@ -121,7 +127,7 @@ module.exports = {
 
             current_state: originalState.toString(), 
 
-            intermediate_roots: module.exports.stringifyArray(intermediateRoots.slice(0, 2**(tx_depth + 1))),
+            intermediate_roots: module.exports.stringifyArray(intermediateRoots),
             paths2root_from: module.exports.stringifyArrayOfArrays(fromProofs),
             paths2root_to: module.exports.stringifyArrayOfArrays(newToProofs),
             paths2root_from_pos: fromPosArray,
@@ -142,8 +148,14 @@ module.exports = {
             token_balance_from: tokenBalanceFromArray,
             token_balance_to: tokenBalanceToArray,
             token_type_from: tokenTypeFromArray,
-            token_type_to: tokenTypeToArray
+            token_type_to: tokenTypeToArray,
 
+	    swap_from_x: module.exports.stringifyArray(tx_swap_from_x),
+	    swap_from_y: module.exports.stringifyArray(tx_swap_from_y),
+	    swap_to_x: module.exports.stringifyArray(tx_swap_to_x),
+	    swap_to_y: module.exports.stringifyArray(tx_swap_to_y),
+	    swap_amount: tx_swap_amount,
+	    swap_token_type: tx_swap_token_type
         }
 
     },
