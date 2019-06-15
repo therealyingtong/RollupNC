@@ -71,6 +71,7 @@ template Main(n,m) {
     
     component txExistence[2**m - 1];
     component senderExistence[2**m - 1];
+    
     component newSender[2**m - 1];
     component merkle_root_from_new_sender[2**m - 1];
     component receiverExistence[2**m - 1];
@@ -81,6 +82,10 @@ template Main(n,m) {
     component ifThenElse[2**m -1];
 
     current_state === intermediate_roots[0];
+
+    component ifBothHighForceEqual[2**m -1];
+    component allLow[2**m -1];
+    component ifThenElse[2**m -1];
 
     for (var i = 0; i < 2**m - 1; i++) {
 
