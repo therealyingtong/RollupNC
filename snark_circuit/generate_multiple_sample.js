@@ -12,8 +12,6 @@ const BAL_DEPTH = 4
 
 // get empty tree hashes
 const zeroLeaf = balanceLeaf.zeroLeaf()
-const zeroLeafHash = balanceLeaf.zeroLeafHash()
-const zeroCache = merkle.getZeroCache(zeroLeafHash, BAL_DEPTH)
 
 // console.log(merkle.getZeroCache(zeroLeafHash, 5))
 // generate Coordinator, A, B, C, D, E, F accounts with the following parameters
@@ -22,8 +20,6 @@ const prvKeys = account.generatePrvKeys(num_accts);
 const zeroPubKey = account.zeroAddress()
 const pubKeys = account.generatePubKeys(prvKeys);
 pubKeys.unshift(zeroPubKey)
-
-// console.log('pubkeys', pubKeys)
 
 const token_types = [0, 0, 2, 1, 2, 1, 2, 1];
 const balances = [0, 0, 1000, 20, 200, 100, 500, 20];
@@ -36,30 +32,7 @@ const balanceLeafArray = balanceLeaf.generateBalanceLeafArray(
     token_types, balances, nonces
 )
 
-const first4BalanceLeafArray = balanceLeafArray.slice(0,4)
-const first4BalanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(first4BalanceLeafArray)
-const first4SubtreeRoot = merkle.rootFromLeafArray(first4BalanceLeafArrayHash)
-console.log('first4SubtreeRoot', first4SubtreeRoot)
-const first4SubtreeProof = merkle.getProofEmpty(2, zeroCache)
-console.log('first4SubtreeProof', first4SubtreeProof)
-console.log('first4WholeRoot', merkle.rootFromLeafAndPath(first4SubtreeRoot, 0, first4SubtreeProof))
-
 const paddedTo16BalanceLeafArray = merkle.padLeafHashArray(balanceLeafArray, zeroLeaf, 8)
-const paddedTo16BalanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(paddedTo16BalanceLeafArray)
-const balanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(balanceLeafArray)
-const paddedBalanceLeafArrayHash = merkle.padLeafHashArray(balanceLeafArrayHash, zeroLeafHash)
-const height = merkle.getBase2Log(paddedBalanceLeafArrayHash.length)
-const nonEmptySubtreeRoot = merkle.rootFromLeafArray(paddedBalanceLeafArrayHash)
-console.log('nonEmptySubtreeRoot', nonEmptySubtreeRoot)
-const subtreeProof = merkle.getProofEmpty(height, zeroCache)
-console.log('subtreeProof', subtreeProof)
-const root = merkle.rootFromLeafAndPath(nonEmptySubtreeRoot, 0, subtreeProof)
-const rootCheck = merkle.rootFromLeafArray(paddedTo16BalanceLeafArrayHash)
-console.log('balance tree root', root)
-console.log('balance tree root check', rootCheck)
-
-// const testFilledArray = merkle.fillLeafArray(balanceLeafArrayHash, zeroLeafHash, 10)
-// console.log(merkle.rootFromLeafArray(testFilledArray))
 
 // generate tx's: 
 // 1. Alice --500--> Charlie , 
@@ -86,17 +59,6 @@ const txArray = txLeaf.generateTxLeafArray(
 )
 
 const txLeafHashes = txLeaf.hashTxLeafArray(txArray)
-// console.log(txLeafHashes)
-
-const txTree = merkle.treeFromLeafArray(txLeafHashes)
-
-// const txRoot = merkle.rootFromLeafArray(txLeafHashes)
-
-// const txPos = merkle.generateMerklePosArray(TX_DEPTH)
-const txProofs = new Array(2**TX_DEPTH)
-for (jj = 0; jj < 2**TX_DEPTH; jj++){
-    txProofs[jj] = merkle.getProof(jj, txTree, txLeafHashes)
-}
 
 signingPrvKeys = new Array()
 from_accounts_idx.forEach(function(index){
@@ -108,11 +70,6 @@ const signatures = txLeaf.signTxLeafHashArray(
     signingPrvKeys
 )
 
-// for (i = 0; i < from_accounts.length; i++){
-//     console.log(
-//         eddsa.verifyMiMC(txLeafHashes[i], signatures[i], from_accounts[i])
-//     )
-// }
 
 const inputs = update.processTxArray(
     TX_DEPTH,
