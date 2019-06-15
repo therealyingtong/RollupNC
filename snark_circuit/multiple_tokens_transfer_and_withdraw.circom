@@ -68,6 +68,9 @@ template Main(n,m) {
                          
     var ZERO_ADDRESS_X = 0000000000000000000000000000000000000000000000000000000000000000000000000000;
     var ZERO_ADDRESS_Y = 00000000000000000000000000000000000000000000000000000000000000000000000000000;
+    var ZERO = 0;
+    var BACK = -1;
+    var FORWARD = 1;
     
     component txExistence[2**m - 1];
     component senderExistence[2**m - 1];
@@ -80,6 +83,12 @@ template Main(n,m) {
     component ifBothHighForceEqual[2**m -1];
     component allLow[2**m -1];
     component ifThenElse[2**m -1];
+
+    //***** ATOMIC SWAP COMPONENTS  ****
+    component parity = ParityGadget(2**m);
+    parity.b <== ZERO;
+    component atomicSwitcher[2**m - 1];
+    //********************************
 
     current_state === intermediate_roots[0];
 
@@ -136,7 +145,16 @@ template Main(n,m) {
 	ifBothHighForceEqual[2*i].check1 <== to_x[i];
 	ifBothHighForceEqual[2*i].check2 <== to_y[i];
 	ifBothHighForceEqual[2*i].a <== token_type_to[i];
-	ifBothHighForceEqual[2*i].b <== token_type_from[i];	
+	ifBothHighForceEqual[2*i].b <== token_type_from[i];
+
+	//**** ATOMIC SWAP CONSTRAINTS ****
+	atomicSwitcher[i] = Switcher();
+	atomicSwitcher[i].L <== FORWARD;
+	atomicSwitcher[i].R <== BACK;
+	atomicSwitcher[i].sel <== parity.out[i];
+	swap_idx[i] = i + atomicSwitcher[i].outL;
+	to_x[i] === swap_to_x[swap_idx[i]]
+	//********************************
 
         // subtract amount from sender balance; increase sender nonce 
         newSender[i] = BalanceLeaf();
