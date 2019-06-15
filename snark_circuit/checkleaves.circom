@@ -56,6 +56,3 @@ template CheckLeaves() {
     check_types.in[1] <== tx2_type;
 
 }
-
-
-component main = CheckLeaves();
