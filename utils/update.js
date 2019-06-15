@@ -65,13 +65,11 @@ module.exports = {
 
         const txProofs = merkle.generateMerkleProofArray(txTree, txLeafHashes)
         
-        // console.log('processTxArray balance leaf array', balanceLeafArrayReceiver)
         var balanceLeafHashArrayReceiver = balance.hashBalanceLeafArray(balanceLeafArrayReceiver)
         
         var balanceTreeReceiver = merkle.treeFromLeafArray(balanceLeafHashArrayReceiver)
         const originalState = merkle.rootFromLeafArray(balanceLeafHashArrayReceiver)
-        console.log('originalState', originalState)
-        console.log('originalState', originalState.toString())
+
 
         intermediateRoots[0] = originalState
 
@@ -101,18 +99,14 @@ module.exports = {
             intermediateRoots[2*k + 2] = output['newRootReceiver'] ;
             balanceTreeSender = output['newTreeSender'];
             balanceTreeReceiver = output['newTreeReceiver'];
-
             balanceLeafArraySender = output['newLeafArraySender'];
             balanceLeafHashArraySender = output['newLeafHashArraySender'];
             balanceLeafArrayReceiver = output['newLeafArrayReceiver'];
             balanceLeafHashArrayReceiver = output['newLeafHashArrayReceiver'];
-
             newToProofs[k] = output['newToProof'];
 
         }
 
-        console.log('newRoot', intermediateRoots[2**(tx_depth + 1)])
-        console.log('currentState', originalState.toString())
         return{
 
             tx_root: txRoot.toString(),

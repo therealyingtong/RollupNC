@@ -97,6 +97,7 @@ module.exports = {
 
     treeFromLeafArray: function(leafArray){
         depth = module.exports.getBase2Log(leafArray.length);
+        if (leafArray.length !== 2**depth) throw new Error(`Leaf Array should have length 2**depth (${2**depth}), got ${leafArray.length}`)
         tree = Array(depth);
 
         tree[depth - 1] = module.exports.pairwiseHash(leafArray)
@@ -117,9 +118,8 @@ module.exports = {
         if (array.length % 2 == 0){
             arrayHash = []
             for (i = 0; i < array.length; i = i + 2){
-                arrayHash.push(mimcjs.multiHash(
-                    [array[i].toString(),array[i+1].toString()]
-                ))
+                let hash = mimcjs.multiHash([array[i].toString(), array[i+1].toString()])
+                arrayHash.push(hash.toString())
             }
             return arrayHash
         } else {
