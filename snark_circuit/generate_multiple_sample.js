@@ -76,15 +76,31 @@ from_x = account.getPubKeysX(from_accounts)
 from_y = account.getPubKeysY(from_accounts)
 to_x = account.getPubKeysX(to_accounts)
 to_y = account.getPubKeysY(to_accounts)
+
+// swap (to, from)
+//const swap_to_idx = [1, 2]
+//const swap_from_idx = [3, 0]
+    
 const amounts = [500, 50]
 const tx_token_types = [1, 1]
 const tx_nonces = [0, 0]
-const swap_from_x = [0,0]
-const swap_from_y = [0,0]
-const swap_to_x = [0,0]
-const swap_to_y = [0,0]
-const swap_amount = [0,0]
-const swap_token_type = [0,0]
+//swap_from_x = account.getPubKeysX(update.pickByIndices(pubKeys, swap_from_idx))
+// swap_from_x.push(0)
+//swap_from_y = account.getPubKeysY(update.pickByIndices(pubKeys,swap_from_idx))
+// swap_from_y.push(0)
+//swap_to_x = account.getPubKeysX(update.pickByIndices(pubKeys, swap_to_idx))
+// swap_to_x.push(0)
+//swap_to_y = account.getPubKeysY(update.pickByIndices(pubKeys,swap_to_idx))
+// swap_to_y.push(0)
+swap_from_x = [0,0]
+swap_from_y =[0,0]
+swap_to_x = [0,0]
+swap_to_y = [0,0]
+const swap_amount = [0, 0]
+const swap_token_type = [0, 0]
+
+console.log('all from_x', account.getPubKeysX(update.pickByIndices(pubKeys,[0,1,2,3])))
+console.log('swap_from_x', swap_from_x)
 
 const txArray = txLeaf.generateTxLeafArray(
     from_x, from_y, to_x, to_y, tx_nonces, amounts, tx_token_types, swap_from_x, swap_from_y, swap_to_x, swap_to_y, swap_amount, swap_token_type

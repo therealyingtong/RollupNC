@@ -19,12 +19,12 @@ module.exports = {
                 leaf['amount'] = amounts[i];
                 leaf['token_type'] = token_types[i];
 		// Add ATOMIC SWAP fields
-                leaf['swap_from_x'] = from_x[i];
-                leaf['swap_from_y'] = from_y[i];
-                leaf['swap_to_x'] = to_x[i];
-                leaf['swap_to_y'] = to_y[i];
-                leaf['swap_amount'] = amounts[i];
-                leaf['swap_token_type'] = token_types[i];
+                leaf['swap_from_x'] = swap_from_x[i];
+                leaf['swap_from_y'] = swap_from_y[i];
+                leaf['swap_to_x'] = swap_to_x[i];
+                leaf['swap_to_y'] = swap_to_y[i];
+                leaf['swap_amount'] = swap_amounts[i];
+                leaf['swap_token_type'] = swap_token_types[i];
                 txLeafArray.push(leaf);
                 // console.log(i, leaf)
             }
@@ -52,7 +52,7 @@ module.exports = {
                     leafArray[i]['swap_to_x'].toString(),
                     leafArray[i]['swap_to_y'].toString(),
                     leafArray[i]['swap_amount'].toString(),
-                    leafArray[i]['swap_token_type'].toString()		    
+                    leafArray[i]['swap_token_type'].toString()		   
                 ])
                 txLeafHashArray.push(leafHash)
             }

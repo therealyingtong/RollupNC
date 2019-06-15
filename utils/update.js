@@ -66,6 +66,7 @@ module.exports = {
         )
 
         const txLeafHashes = txLeaf.hashTxLeafArray(txArray)
+	console.log('txLeafHashes', txLeafHashes)
         const txTree = merkle.treeFromLeafArray(txLeafHashes)
         const txRoot = merkle.rootFromLeafArray(txLeafHashes)
 
