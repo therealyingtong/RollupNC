@@ -57,10 +57,8 @@ tx1 = {
     "amount": 500,
     "tokenType": 1,
     // atomic swap fields
-    "swapFromX": 0,
-    "swapFromY": 0,
-    "swapToX": 0,
-    "swapToY": 0,
+    "swapFromID": -1,
+    "swapToID": -1,    
     "swapTokenType": 0,
     "swapAmount": 0
 }
@@ -72,10 +70,8 @@ tx2 = {
     "amount": 50,
     "tokenType": 1,
     // atomic swap fields
-    "swapFromX": 0,
-    "swapFromY": 0,
-    "swapToX": 0,
-    "swapToY": 0,
+    "swapFromID": -1,
+    "swapToID": -1,
     "swapTokenType": 0,
     "swapAmount": 0
 }
@@ -168,10 +164,26 @@ to_y = [pubKeyYs[txObjs[0]["toID"]], pubKeyYs[txObjs[1]["toID"]]]
 amounts = [txObjs[0]["amount"], txObjs[1]["amount"]]
 tx_token_types = [txObjs[0]["tokenType"], txObjs[1]["tokenType"]]
 tx_nonces = [txObjs[0]["nonce"], txObjs[1]["nonce"]]
-swap_from_x = [txObjs[0]["swapFromX"], txObjs[1]["swapFromX"]]
-swap_from_y =[txObjs[0]["swapFromY"], txObjs[1]["swapFromY"]]
-swap_to_x = [txObjs[0]["swapToX"], txObjs[1]["swapToX"]]
-swap_to_y = [txObjs[0]["swapToY"], txObjs[1]["swapToY"]]
+swap_to_idx = [txObjs[0]["swapToID"], txObjs[1]["swapToID"]]
+swap_from_idx = [txObjs[0]["swapFromID"], txObjs[1]["swapFromID"]]
+swap_from_x = []
+swap_from_y = []
+swap_to_x = []
+swap_to_y = []
+for (i = 0; i < txObjs.length; i++) {
+    if (swap_from_idx[i] == -1 || swap_to_idx[i] == -1) {
+	swap_from_x.push(0)
+	swap_from_y.push(0)
+	swap_to_x.push(0)
+	swap_to_y.push(0)
+    } else{
+	swap_from_x.push(pubKeyXs[swap_from_idx[i]])
+	swap_from_y.push(pubKeyYs[swap_from_idx[i]])
+	swap_to_x.push(pubKeyXs[swap_to_idx[i]])
+	swap_to_y.push(pubKeyYs[swap_to_idx[i]])
+    }
+}
+
 swap_amount = [txObjs[0]["swapAmount"], txObjs[1]["swapAmount"]]
 swap_token_type = [txObjs[0]["swapTokenType"], txObjs[1]["swapTokenType"]]
 
