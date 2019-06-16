@@ -61,7 +61,7 @@ template Main(n,m) {
     signal private input token_type_from[2**m]; // sender token type
     signal private input token_type_to[2**m]; // receiver token type
 
-    // ATOMIC SWAP TX FIELDS
+    // Atomic Swap tx fields
     signal private input swap_from_x[2**m];
     signal private input swap_from_y[2**m];
     signal private input swap_to_x[2**m];
@@ -69,13 +69,17 @@ template Main(n,m) {
     signal private input swap_amount[2**m];
     signal private input swap_token_type[2**m];
 
-    // CONSTANTS
+    // new balance tree Merkle root
+    signal output out;
+
+    // Constants
     var ZERO_ADDRESS_X = 0000000000000000000000000000000000000000000000000000000000000000000000000000;
     var ZERO_ADDRESS_Y = 00000000000000000000000000000000000000000000000000000000000000000000000000000;
     var ZERO = 0;
     var ATOMIC_FIELDS = 6;
 
-    // PADDING INPUTS FOR ATOMIC SWAP
+    //-----ATOMIC SWAP SETUP-----//
+    // Padding inputs for atomic swap
     component padded_to_x = Padder(2**m);
     component padded_to_y = Padder(2**m);
     component padded_from_x = Padder(2**m);
@@ -91,24 +95,25 @@ template Main(n,m) {
         padded_amount.in[k] <== amount[k];
         padded_token_type.in[k] <== token_type_from[k];
     }
-    //***** ATOMIC SWAP COMPONENTS  ****
+
     component parity = ParityGadget(2**m);
     parity.b <== ZERO;
     component atomicSwitcher[2**m, ATOMIC_FIELDS];
     component atomicChecker[2**m];
-    //********************************
-
-
+    //-----END ATOMIC SWAP SETUP-----//
 
     var NONCE_MAX_VALUE = 100;
 
-   // constant zero address
-                         
-
     component txExistence[2**m];
-
-    
-
+    component senderExistence[2**m];
+    component ifBothHighForceEqual[2**m];
+    component newSender[2**m];
+    component merkle_root_from_new_sender[2**m];
+    component receiverExistence[2**m];
+    component newReceiver[2**m];
+    component allLow[2**m];
+    component ifThenElse[2**m];        
+    component merkle_root_from_new_receiver[2**m];
 
     current_state === intermediate_roots[0];
 
@@ -139,7 +144,30 @@ template Main(n,m) {
     	txExistence[i].R8x <== R8x[i];
     	txExistence[i].R8y <== R8y[i];
     	txExistence[i].S <== S[i];
-    	//-----END TX EXISTENCE AND SIG CHECK -----//    	
+    	//-----END TX EXISTENCE AND SIG CHECK -----//
+
+        //-----SENDER IN TREE 1 BEFORE DEDUCTING CHECK -----//
+        senderExistence[i] = BalanceExistence(n);
+        senderExistence[i].x <== from_x[i];
+        senderExistence[i].y <== from_y[i];
+        senderExistence[i].token_balance <== token_balance_from[i];
+        senderExistence[i].nonce <== nonce_from[i];
+        senderExistence[i].token_type <== token_type_from[i];
+
+        senderExistence[i].balance_root <== intermediate_roots[2*i];
+        for (var j = 0; j < n; j++){
+            senderExistence[i].paths2_root_pos[j] <== paths2root_from_pos[i, j];
+            senderExistence[i].paths2_root[j] <== paths2root_from[i, j];
+        }
+        //-----END SENDER IN TREE 1 BEFORE DEDUCTING CHECK -----//
+
+       //-----CHECK TOKEN TYPES === IF NON-WITHDRAWS-----//
+       ifBothHighForceEqual[i] = IfBothHighForceEqual();
+       ifBothHighForceEqual[i].check1 <== to_x[i];
+       ifBothHighForceEqual[i].check2 <== to_y[i];
+       ifBothHighForceEqual[i].a <== token_type_to[i];
+       ifBothHighForceEqual[i].b <== token_type_from[i];
+       //-----END CHECK TOKEN TYPES-----//    
 
 	//-----ATOMIC SWAP CONSTRAINTS-----//
         atomicChecker[i] = CheckLeaves();
@@ -173,8 +201,76 @@ template Main(n,m) {
         atomicSwitcher[i,5].R <== padded_token_type.out[i+2];
 	atomicChecker[i].tx2_type <== atomicSwitcher[i,5].outR;				
 	//-----END ATOMIC SWAP CONSTRAINTS-----//
+
+	//-----CHECK SENDER IN TREE 2 AFTER DEDUCTING-----//
+        // subtract amount from sender balance; increase sender nonce 
+        newSender[i] = BalanceLeaf();
+        newSender[i].x <== from_x[i];
+        newSender[i].y <== from_y[i];
+        newSender[i].token_balance <== token_balance_from[i] - amount[i];
+        newSender[i].nonce <== nonce_from[i] + 1;
+        newSender[i].token_type <== token_type_from[i];
+
+        // get intermediate root from new sender leaf
+        merkle_root_from_new_sender[i] = GetMerkleRoot(n);
+        merkle_root_from_new_sender[i].leaf <== newSender[i].out;
+        for (var j = 0; j < n; j++){
+            merkle_root_from_new_sender[i].paths2_root[j] <== paths2root_from[i, j];
+            merkle_root_from_new_sender[i].paths2_root_pos[j] <== paths2root_from_pos[i, j];
+        }
+
+        // check that intermediate root is consistent with input
+        merkle_root_from_new_sender[i].out === intermediate_roots[2*i  + 1];
+	//-----END SENDER IN TREE 2 AFTER DEDUCTING CHECK-----//
+
+	//-----RECEIVER IN TREE 2 BEFORE INCREMENTING CHECK-----//
+        receiverExistence[i] = BalanceExistence(n);
+        receiverExistence[i].x <== to_x[i];
+        receiverExistence[i].y <== to_y[i];
+        receiverExistence[i].token_balance <== token_balance_to[i];
+        receiverExistence[i].nonce <== nonce_to[i];
+        receiverExistence[i].token_type <== token_type_to[i];
+
+        receiverExistence[i].balance_root <== intermediate_roots[2*i + 1];
+        for (var j = 0; j < n; j++){
+            receiverExistence[i].paths2_root_pos[j] <== paths2root_to_pos[i, j] ;
+            receiverExistence[i].paths2_root[j] <== paths2root_to[i, j];
+        }
+	//-----END CHECK RECEIVER IN TREE 2 BEFORE INCREMENTING-----//
+
+	//-----CHECK RECEIVER IN TREE 3 AFTER INCREMENTING-----//
+	newReceiver[i] = BalanceLeaf();
+        newReceiver[i].x <== to_x[i];
+        newReceiver[i].y <== to_y[i];
+
+        // if receiver is zero address, do not change balance
+        // otherwise add amount to receiver balance
+	allLow[i] = AllLow(2);
+	allLow[i].in[0] <== to_x[i];
+	allLow[i].in[1] <== to_y[i];
+
+	ifThenElse[i] = IfAThenBElseC();
+	ifThenElse[i].aCond <== allLow[i].out;
+	ifThenElse[i].bBranch <== token_balance_to[i];
+	ifThenElse[i].cBranch <== token_balance_to[i] + amount[i];
+	
+	newReceiver[i].token_balance <== ifThenElse[i].out;
+        newReceiver[i].nonce <== nonce_to[i];
+        newReceiver[i].token_type <== token_type_to[i];
+
+        // get intermediate root from new receiver leaf
+        merkle_root_from_new_receiver[i] = GetMerkleRoot(n);
+        merkle_root_from_new_receiver[i].leaf <== newReceiver[i].out;
+        for (var j = 0; j < n; j++){
+            merkle_root_from_new_receiver[i].paths2_root[j] <== paths2root_to[i, j];
+            merkle_root_from_new_receiver[i].paths2_root_pos[j] <== paths2root_to_pos[i, j];
+        }
+
+        // check that intermediate root is consistent with input
+        merkle_root_from_new_receiver[i].out === intermediate_roots[2*i  + 2];
+	//-----END CHECK RECEIVER IN TREE 3 AFTER INCREMENTING-----//
     }
-    
+    out <== merkle_root_from_new_receiver[2**m-1].out;
 }
 
 component main = Main(2,1);

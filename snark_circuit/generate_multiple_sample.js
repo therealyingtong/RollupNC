@@ -15,99 +15,144 @@ const zeroLeaf = balanceLeaf.zeroLeaf()
 const zeroLeafHash = balanceLeaf.zeroLeafHash()
 const zeroCache = merkle.getZeroCache(zeroLeafHash, BAL_DEPTH)
 
+// Balance object
+balance1 = {
+    "secretKey": 1,
+    "pubX": 5686635804472582232015924858874568287077998278299757444567424097636989354076n,
+    "pubY": 20652491795398389193695348132128927424105970377868038232787590371122242422611n,
+    "tokenType": 1,
+    "balance": 1000,
+    "nonce": 0,
+    "id": 0
+};
+
+balance2 = {
+    "secretKey": 2,
+    "pubX": 5188413625993601883297433934250988745151922355819390722918528461123462745458n,
+    "pubY": 12688531930957923993246507021135702202363596171614725698211865710242486568828n,
+    "tokenType": 1,
+    "balance": 20,
+    "nonce": 0,
+    "id": 1
+
+};
+
+balance3 = {
+    "secretKey": 3,
+    "pubX": 3765814648989847167846111359329408115955684633093453771314081145644228376874n,
+    "pubY": 9087768748788939667604509764703123117669679266272947578075429450296386463456n,
+    "tokenType": 1,
+    "balance": 200,
+    "nonce": 0,
+    "id": 2
+};
+
+balance4 = {
+    "secretKey": 4,
+    "pubX": 1762022020655193103898710344498807340207430243997238950919845130297394445492n,
+    "pubY": 8832411107013507530516405716520512990480512909708424307433374075372921372064n,
+    "tokenType": 1,
+    "balance": 100,
+    "nonce": 0,
+    "id": 3
+};
+
+balanceObjs = [balance1, balance2, balance3, balance4];
+
 // console.log(merkle.getZeroCache(zeroLeafHash, 5))
 // generate Coordinator, A, B, C, D, E, F accounts with the following parameters
-const num_accts = 4;
-const prvKeys = account.generatePrvKeys(num_accts);
-//const zeroPubKey = account.zeroAddress()
-const pubKeys = account.generatePubKeys(prvKeys);
+prvKeys = []
+pubKeyXs = []
+pubKeyYs = []
+pubKeys = []
+token_types = []
+balances = []
+nonces = []
+for (i = 0; i < balanceObjs.length; i++) {
+    prvKeys.push(account.prvKeyFromInt(balanceObjs[i]["secretKey"]))
+    pubKeyXs.push(balanceObjs[i]["pubX"])
+    pubKeyYs.push(balanceObjs[i]["pubY"])
+    pubKeys.push([pubKeyXs[i], pubKeyYs[i]])
+    token_types.push(balanceObjs[i]["tokenType"])
+    balances.push(balanceObjs[i]["balance"])
+    nonces.push(balanceObjs[i]["nonce"])
+}
 //pubKeys.unshift(zeroPubKey)
 
-console.log('pubkeys', pubKeys)
-
-const token_types = [1,1,1,1];
-const balances = [1000, 20, 200, 100];
-const nonces = [0, 0, 0, 0];
+console.log('privkeys', prvKeys);
+console.log('pubkeyXs', pubKeyXs);
+console.log('pubkeyYs', pubKeyYs);
 
 // generate balance leaves for user accounts
 const balanceLeafArray = balanceLeaf.generateBalanceLeafArray(
-    account.getPubKeysX(pubKeys),
-    account.getPubKeysY(pubKeys),
-    token_types, balances, nonces
+    pubKeyXs, pubKeyYs, token_types, balances, nonces
 )
-
-/*const first4BalanceLeafArray = balanceLeafArray.slice(0,4)
-const first4BalanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(first4BalanceLeafArray)
-const first4SubtreeRoot = merkle.rootFromLeafArray(first4BalanceLeafArrayHash)
-console.log('first4SubtreeRoot', first4SubtreeRoot)
-const first4SubtreeProof = merkle.getProofEmpty(2, zeroCache)
-console.log('first4SubtreeProof', first4SubtreeProof)
-console.log('first4WholeRoot', merkle.rootFromLeafAndPath(first4SubtreeRoot, 0, first4SubtreeProof))
-
-const paddedTo16BalanceLeafArray = merkle.padLeafHashArray(balanceLeafArray, zeroLeaf, 8)
-const paddedTo16BalanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(paddedTo16BalanceLeafArray)
-const balanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(balanceLeafArray)
-const paddedBalanceLeafArrayHash = merkle.padLeafHashArray(balanceLeafArrayHash, zeroLeafHash)
-
-const height = merkle.getBase2Log(paddedBalanceLeafArrayHash.length)
-const nonEmptySubtreeRoot = merkle.rootFromLeafArray(paddedBalanceLeafArrayHash)
-console.log('nonEmptySubtreeRoot', nonEmptySubtreeRoot)
-const subtreeProof = merkle.getProofEmpty(height, zeroCache)
-console.log('subtreeProof', subtreeProof)
-const root = merkle.rootFromLeafAndPath(nonEmptySubtreeRoot, 0, subtreeProof)
-/*const rootCheck = merkle.rootFromLeafArray(paddedTo16BalanceLeafArrayHash)
-console.log('balance tree root', root)
-console.log('balance tree root check', rootCheck)*/
-
-// const testFilledArray = merkle.fillLeafArray(balanceLeafArrayHash, zeroLeafHash, 10)
-// console.log(merkle.rootFromLeafArray(testFilledArray))
 
 // generate tx's: 
 // 1. Alice --500--> Charlie , 
 // 2. Daenerys --50--> Bob,
 
-from_accounts_idx = [0, 3]
-from_accounts = update.pickByIndices(pubKeys, from_accounts_idx)
+// TX object
+tx1 = {
+    "fromID": 0,
+    "toID": 2,
+    "nonce": 0,
+    "amount": 500,
+    "tokenType": 1,
+    // atomic swap fields
+    "swapFromX": 0,
+    "swapFromY": 0,
+    "swapToX": 0,
+    "swapToY": 0,
+    "swapTokenType": 0,
+    "swapAmount": 0
+}
 
-to_accounts_idx = [2, 1]
-to_accounts = update.pickByIndices(pubKeys, to_accounts_idx)
+tx2 = {
+    "fromID": 3,
+    "toID": 1,
+    "nonce": 0,
+    "amount": 50,
+    "tokenType": 1,
+    // atomic swap fields
+    "swapFromX": 0,
+    "swapFromY": 0,
+    "swapToX": 0,
+    "swapToY": 0,
+    "swapTokenType": 0,
+    "swapAmount": 0
+}
 
-from_x = account.getPubKeysX(from_accounts)
-from_y = account.getPubKeysY(from_accounts)
-to_x = account.getPubKeysX(to_accounts)
-to_y = account.getPubKeysY(to_accounts)
+from_accounts_idx = [tx1["fromID"], tx2["fromID"]]
+
+to_accounts_idx = [tx1["toID"], tx2["toID"]]
+
+from_x = [balanceObjs[tx1["fromID"]]["pubX"], balanceObjs[tx2["fromID"]]["pubX"]]
+from_y = [balanceObjs[tx1["fromID"]]["pubY"], balanceObjs[tx2["fromID"]]["pubY"]]
+to_x = [balanceObjs[tx1["toID"]]["pubX"], balanceObjs[tx2["toID"]]["pubX"]]
+to_y = [balanceObjs[tx1["toID"]]["pubY"], balanceObjs[tx2["toID"]]["pubY"]]
 
 // swap (to, from)
 //const swap_to_idx = [1, 2]
 //const swap_from_idx = [3, 0]
     
-const amounts = [500, 50]
-const tx_token_types = [1, 1]
-const tx_nonces = [0, 0]
-//swap_from_x = account.getPubKeysX(update.pickByIndices(pubKeys, swap_from_idx))
-// swap_from_x.push(0)
-//swap_from_y = account.getPubKeysY(update.pickByIndices(pubKeys,swap_from_idx))
-// swap_from_y.push(0)
-//swap_to_x = account.getPubKeysX(update.pickByIndices(pubKeys, swap_to_idx))
-// swap_to_x.push(0)
-//swap_to_y = account.getPubKeysY(update.pickByIndices(pubKeys,swap_to_idx))
-// swap_to_y.push(0)
-swap_from_x = [0,0]
-swap_from_y =[0,0]
-swap_to_x = [0,0]
-swap_to_y = [0,0]
-const swap_amount = [0, 0]
-const swap_token_type = [0, 0]
-
-console.log('all from_x', account.getPubKeysX(update.pickByIndices(pubKeys,[0,1,2,3])))
-console.log('swap_from_x', swap_from_x)
+amounts = [tx1["amount"], tx2["amount"]]
+tx_token_types = [tx1["tokenType"], tx2["tokenType"]]
+tx_nonces = [tx1["nonce"], tx2["nonce"]]
+swap_from_x = [tx1["swapFromX"], tx2["swapFromX"]]
+swap_from_y =[tx1["swapFromY"], tx2["swapFromY"]]
+swap_to_x = [tx1["swapToX"], tx2["swapToX"]]
+swap_to_y = [tx1["swapToY"], tx2["swapToY"]]
+swap_amount = [tx1["swapAmount"], tx2["swapAmount"]]
+swap_token_type = [tx1["swapTokenType"], tx2["swapTokenType"]]
 
 const txArray = txLeaf.generateTxLeafArray(
     from_x, from_y, to_x, to_y, tx_nonces, amounts, tx_token_types, swap_from_x, swap_from_y, swap_to_x, swap_to_y, swap_amount, swap_token_type
 )
 
+console.log('txArray', txArray)
+
 const txLeafHashes = txLeaf.hashTxLeafArray(txArray)
-// console.log(txLeafHashes)
 
 const txTree = merkle.treeFromLeafArray(txLeafHashes)
 
@@ -139,7 +184,6 @@ const inputs = update.processTxArray(
     TX_DEPTH,
     BAL_DEPTH,
     pubKeys,
-    //paddedTo16BalanceLeafArray,
     balanceLeafArray,
     from_accounts_idx,
     to_accounts_idx,
