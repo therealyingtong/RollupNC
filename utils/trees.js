@@ -2,27 +2,31 @@ const merkle = require("./MiMCMerkle")
 
 
 class Tree {
-  constructor(items, depth) {
-    this.items = items
-    this.leaveHashes = this.items.map(item => item.leafHash().toString())
-    this.tree = merkle.treeFromLeafArray(this.leaveHashes)
+  constructor(leaves, depth) {
+    this.leaves = leaves
+    this.leafHashes = this.leaves.map(leaf => leaf.leafHash().toString())
+    this.tree = merkle.treeFromLeafArray(this.leafHashes)
     this.root = this.tree[0][0]
     //TODO: Pad if necessary
     this.depth = depth
   }
 
   getProof(leafIndex) {
-    return merkle.getProof(leafIndex, this.tree, this.leaveHashes)
+    return merkle.getProof(leafIndex, this.tree, this.leafHashes)
   }
 
-  getItemFieldArray(field) {
-    return this.items.map(item => item[field])
+  getLeafFieldArray(field) {
+    return this.leaves.map(item => item[field])
   }
   everyMerkleProof() {
-    return this.items.map((_, index) => this.getProof(index))
+    return this.leaves.map((_, index) => this.getProof(index))
   }
   getMerklePosArray(){
     return merkle.generateMerklePosArray(this.depth)
+  }
+
+  idxToBinaryPos(leafIndex){
+    return merkle.idxToBinaryPos(leafIndex)
   }
 
 }

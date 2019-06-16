@@ -32,11 +32,45 @@ txTree = new Tree(txArray, TX_DEPTH)
 balanceTree = new Tree(balanceArray, BAL_DEPTH)
 
 
+function createEmptyHistory() {
+  const historyFields = [
+    'nonceFrom', 'nonceTo',
+    'balanceFrom', 'balanceTo',
+    'tokenTypeFrom', 'tokenTypeTo',
+    'fromPos', 'toPos',
+    'fromProofs'];
+  const history = {};
+  historyFields.forEach(field => history[field] = []);
+  return history
+}
+
+
+function apply_tx(tx, balances, history) {
+  const fromAccount = balances[tx._fromAccount.index]
+  if (fromAccount.balance < tx.amount) {
+    throw `insufficient fund: want to send ${tx.amount} from a balance of ${fromAccount.balance}`
+  }
+  fromAccount.balance -= tx.amount;
+  balances[tx._fromAccount.index].nonce += 1;
+  balances[tx._toAccount.index].balance += tx.amount;
+  return [balances, history]
+}
+
+function apply_state_transitions(txs, balanceTree) {
+  let _balances = balanceTree.leaves;
+  let history = createEmptyHistory(txs.length)
+  for (tx in txs) {
+    [_balances, history] = apply_tx(tx, _balances, history)
+  }
+  return [_balances, history]
+}
+
+
 function createSnarkInput(txTree, balanceTree) {
 
   function lookupBalanceField(senderOrReceiver, balanceField) {
-    return txTree.items.map(tx =>
-      balanceTree.items[tx[senderOrReceiver].index][balanceField]
+    return txTree.leaves.map(tx =>
+      balanceTree.leaves[tx[senderOrReceiver].index][balanceField]
     )
   }
 
@@ -53,17 +87,17 @@ function createSnarkInput(txTree, balanceTree) {
     paths2root_from_pos: fromPosArray,
     paths2root_to_pos: toPosArray,
 
-    from_x: txTree.getItemFieldArray('fromX'),
-    from_y: txTree.getItemFieldArray('fromY'),
-    R8x: txTree.getItemFieldArray('R1'),
-    R8y: txTree.getItemFieldArray('R2'),
-    S: txTree.getItemFieldArray('S'),
+    from_x: txTree.getLeafFieldArray('fromX'),
+    from_y: txTree.getLeafFieldArray('fromY'),
+    R8x: txTree.getLeafFieldArray('R1'),
+    R8y: txTree.getLeafFieldArray('R2'),
+    S: txTree.getLeafFieldArray('S'),
 
     nonce_from: lookupBalanceField('_fromAccount', 'nonce'),
-    to_x: txTree.getItemFieldArray('toX'),
-    to_y: txTree.getItemFieldArray('toY'),
+    to_x: txTree.getLeafFieldArray('toX'),
+    to_y: txTree.getLeafFieldArray('toY'),
     nonce_to: lookupBalanceField('_toAccount', 'nonce'),
-    amount: txTree.getItemFieldArray('amount'),
+    amount: txTree.getLeafFieldArray('amount'),
 
     token_balance_from: lookupBalanceField('_fromAccount', 'balance'),
     token_balance_to: lookupBalanceField('_toAccount', 'balance'),
