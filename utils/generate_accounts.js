@@ -14,9 +14,13 @@ module.exports = {
             var prvKey = Buffer.from(
                 i.toString().padStart(64,'0'), "hex");
             // console.log(prvKey);
-            prvKeys.push(prvKey);
+            prvKeys.push(prvKey.toString());
         }
         return prvKeys;  
+    },
+
+    prvKeyFromInt: function(i){
+	return Buffer.from(i.toString().padStart(64,'0'), "hex");
     },
 
     generatePubKeys: function(prvKeys){

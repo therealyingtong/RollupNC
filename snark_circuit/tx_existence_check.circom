@@ -12,6 +12,12 @@ template TxExistence(k){
     signal input nonce;
     signal input amount;
     signal input token_type_from;
+    signal input swap_from_x;
+    signal input swap_from_y;
+    signal input swap_to_x;
+    signal input swap_to_y;
+    signal input swap_amount;
+    signal input swap_token_type;    
 
     signal input tx_root;
     signal input paths2_root_pos[k];
@@ -28,7 +34,13 @@ template TxExistence(k){
     txLeaf.to_y <== to_y;
     txLeaf.nonce <== nonce; 
     txLeaf.amount <== amount;
-    txLeaf.token_type_from <== token_type_from;
+    txLeaf.token_type <== token_type_from;
+    txLeaf.swap_from_x <== swap_from_x;
+    txLeaf.swap_from_y <== swap_from_y;
+    txLeaf.swap_to_x <== swap_to_x;
+    txLeaf.swap_to_y <== swap_to_y;
+    txLeaf.swap_amount <== swap_amount;
+    txLeaf.swap_token_type <== swap_token_type;    
 
     component txExistence = LeafExistence(k);
     txExistence.leaf <== txLeaf.out;
@@ -38,7 +50,7 @@ template TxExistence(k){
         txExistence.paths2_root_pos[q] <== paths2_root_pos[q];
         txExistence.paths2_root[q] <== paths2_root[q];
     }
-
+    
     component verifier = EdDSAMiMCVerifier();   
     verifier.enabled <== 1;
     verifier.Ax <== from_x;

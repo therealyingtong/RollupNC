@@ -63,4 +63,3 @@ template ParityGadgetCheck(k){
     }
 }
 
-component main = ParityGadgetCheck(8);

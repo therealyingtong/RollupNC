@@ -19,7 +19,7 @@ template LeafExistence(k){
     }
 
     // equality constraint: input tx root === computed tx root 
-    root === computed_root.out;
+//    root === computed_root.out;
 
 }
 

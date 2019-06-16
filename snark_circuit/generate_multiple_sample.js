@@ -6,87 +6,176 @@ const txLeaf = require("../utils/generate_tx_leaf.js");
 const merkle = require("../utils/MiMCMerkle.js")
 const update = require("../utils/update.js")
 const eddsa = require("../circomlib/src/eddsa.js");
+var process = require("process");
 
-const TX_DEPTH = 2
-const BAL_DEPTH = 4
+const TX_DEPTH = 1
+const BAL_DEPTH = 2
 
 // get empty tree hashes
 const zeroLeaf = balanceLeaf.zeroLeaf()
 const zeroLeafHash = balanceLeaf.zeroLeafHash()
 const zeroCache = merkle.getZeroCache(zeroLeafHash, BAL_DEPTH)
 
+// Balance object
+balance1 = {
+    "secretKey": 1,
+    "tokenType": 1,
+    "balance": 1000,
+    "nonce": 0,
+    "id": 0
+};
+
+balance2 = {
+    "secretKey": 2,
+    "tokenType": 1,
+    "balance": 20,
+    "nonce": 0,
+    "id": 1
+};
+
+balance3 = {
+    "secretKey": 3,
+    "tokenType": 1,
+    "balance": 200,
+    "nonce": 0,
+    "id": 2
+};
+
+balance4 = {
+    "secretKey": 4,
+    "tokenType": 1,
+    "balance": 100,
+    "nonce": 0,
+    "id": 3
+};
+
+// TX object
+tx1 = {
+    "fromID": 0,
+    "toID": 2,
+    "nonce": 0,
+    "amount": 500,
+    "tokenType": 1,
+    // atomic swap fields
+    "swapFromX": 0,
+    "swapFromY": 0,
+    "swapToX": 0,
+    "swapToY": 0,
+    "swapTokenType": 0,
+    "swapAmount": 0
+}
+
+tx2 = {
+    "fromID": 3,
+    "toID": 1,
+    "nonce": 0,
+    "amount": 50,
+    "tokenType": 1,
+    // atomic swap fields
+    "swapFromX": 0,
+    "swapFromY": 0,
+    "swapToX": 0,
+    "swapToY": 0,
+    "swapTokenType": 0,
+    "swapAmount": 0
+}
+
+
+balanceObjs = []
+txObjs = [tx1, tx2];
+
+function balanceCmp(a, b) {
+    if (a.id < b.id) {
+	return -1;
+    }
+    if (a.id > b.id) {
+	return 1;
+    }
+    return 0
+}
+
+// read in files from disk
+if (process.argv.length >= 4) {
+    balanceObjs = []
+//    txObjs = []
+    balanceDir = process.argv[2];
+    txDir = process.argv[3];
+
+//    console.log('txDir', txDir)
+//    console.log('balanceDir', balanceDir)
+
+    fs.readdirSync(balanceDir).forEach(function (file) {
+	balanceObjs.push(JSON.parse(fs.readFileSync(balanceDir+file)))
+    });
+    balanceObjs.sort(balanceCmp)
+}
+
 // console.log(merkle.getZeroCache(zeroLeafHash, 5))
 // generate Coordinator, A, B, C, D, E, F accounts with the following parameters
-const num_accts = 7;
-const prvKeys = account.generatePrvKeys(num_accts);
-const zeroPubKey = account.zeroAddress()
-const pubKeys = account.generatePubKeys(prvKeys);
-pubKeys.unshift(zeroPubKey)
+prvKeys = []
+pubKeyXs = []
+pubKeyYs = []
+pubKeys = []
+token_types = []
+balances = []
+nonces = []
+    
+for (i = 0; i < balanceObjs.length; i++) {
+    prvKeys.push(account.prvKeyFromInt(balanceObjs[i]["secretKey"]))
+    token_types.push(balanceObjs[i]["tokenType"])
+    balances.push(balanceObjs[i]["balance"])
+    nonces.push(balanceObjs[i]["nonce"])
+}
+pubKeys = account.generatePubKeys(prvKeys)
+for (i = 0; i < balanceObjs.length; i++) {
+    pubKeyXs.push(pubKeys[i][0])
+    pubKeyYs.push(pubKeys[i][1])
+}
+    
 
-// console.log('pubkeys', pubKeys)
-
-const token_types = [0, 0, 2, 1, 2, 1, 2, 1];
-const balances = [0, 0, 1000, 20, 200, 100, 500, 20];
-const nonces = [0, 0, 0, 0, 0, 0, 0, 0];
+//console.log('privkeys', prvKeys);
+//console.log('pubkeyXs', pubKeyXs);
+//console.log('pubkeyYs', pubKeyYs);
 
 // generate balance leaves for user accounts
 const balanceLeafArray = balanceLeaf.generateBalanceLeafArray(
-    account.getPubKeysX(pubKeys),
-    account.getPubKeysY(pubKeys),
-    token_types, balances, nonces
+    pubKeyXs, pubKeyYs, token_types, balances, nonces
 )
-
-const first4BalanceLeafArray = balanceLeafArray.slice(0,4)
-const first4BalanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(first4BalanceLeafArray)
-const first4SubtreeRoot = merkle.rootFromLeafArray(first4BalanceLeafArrayHash)
-console.log('first4SubtreeRoot', first4SubtreeRoot)
-const first4SubtreeProof = merkle.getProofEmpty(2, zeroCache)
-console.log('first4SubtreeProof', first4SubtreeProof)
-console.log('first4WholeRoot', merkle.rootFromLeafAndPath(first4SubtreeRoot, 0, first4SubtreeProof))
-
-const paddedTo16BalanceLeafArray = merkle.padLeafHashArray(balanceLeafArray, zeroLeaf, 8)
-const paddedTo16BalanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(paddedTo16BalanceLeafArray)
-const balanceLeafArrayHash = balanceLeaf.hashBalanceLeafArray(balanceLeafArray)
-const paddedBalanceLeafArrayHash = merkle.padLeafHashArray(balanceLeafArrayHash, zeroLeafHash)
-const height = merkle.getBase2Log(paddedBalanceLeafArrayHash.length)
-const nonEmptySubtreeRoot = merkle.rootFromLeafArray(paddedBalanceLeafArrayHash)
-console.log('nonEmptySubtreeRoot', nonEmptySubtreeRoot)
-const subtreeProof = merkle.getProofEmpty(height, zeroCache)
-console.log('subtreeProof', subtreeProof)
-const root = merkle.rootFromLeafAndPath(nonEmptySubtreeRoot, 0, subtreeProof)
-const rootCheck = merkle.rootFromLeafArray(paddedTo16BalanceLeafArrayHash)
-console.log('balance tree root', root)
-console.log('balance tree root check', rootCheck)
-
-// const testFilledArray = merkle.fillLeafArray(balanceLeafArrayHash, zeroLeafHash, 10)
-// console.log(merkle.rootFromLeafArray(testFilledArray))
 
 // generate tx's: 
 // 1. Alice --500--> Charlie , 
-// 2. Charlie --200--> withdraw,
-// 3. Bob --10--> Daenerys,
-// 4. empty tx (operator --0--> withdraw)
+// 2. Daenerys --50--> Bob,
 
-from_accounts_idx = [2, 4, 3, 1]
-from_accounts = update.pickByIndices(pubKeys, from_accounts_idx)
+from_accounts_idx = [txObjs[0]["fromID"], txObjs[1]["fromID"]]
 
-to_accounts_idx = [4, 0, 5, 0]
-to_accounts = update.pickByIndices(pubKeys, to_accounts_idx)
+to_accounts_idx = [txObjs[0]["toID"], txObjs[1]["toID"]]
 
-from_x = account.getPubKeysX(from_accounts)
-from_y = account.getPubKeysY(from_accounts)
-to_x = account.getPubKeysX(to_accounts)
-to_y = account.getPubKeysY(to_accounts)
-const amounts = [500, 200, 10, 0]
-const tx_token_types = [2, 2, 1, 0]
-const tx_nonces = [0, 0, 0, 0]
+from_x = [pubKeyXs[txObjs[0]["fromID"]], pubKeyXs[txObjs[1]["fromID"]]]
+from_y = [pubKeyYs[txObjs[0]["fromID"]], pubKeyYs[txObjs[1]["fromID"]]]
+to_x = [pubKeyXs[txObjs[0]["toID"]], pubKeyXs[txObjs[1]["toID"]]]
+to_y = [pubKeyYs[txObjs[0]["toID"]], pubKeyYs[txObjs[1]["toID"]]]
+
+// swap (to, from)
+//const swap_to_idx = [1, 2]
+//const swap_from_idx = [3, 0]
+    
+amounts = [txObjs[0]["amount"], txObjs[1]["amount"]]
+tx_token_types = [txObjs[0]["tokenType"], txObjs[1]["tokenType"]]
+tx_nonces = [txObjs[0]["nonce"], txObjs[1]["nonce"]]
+swap_from_x = [txObjs[0]["swapFromX"], txObjs[1]["swapFromX"]]
+swap_from_y =[txObjs[0]["swapFromY"], txObjs[1]["swapFromY"]]
+swap_to_x = [txObjs[0]["swapToX"], txObjs[1]["swapToX"]]
+swap_to_y = [txObjs[0]["swapToY"], txObjs[1]["swapToY"]]
+swap_amount = [txObjs[0]["swapAmount"], txObjs[1]["swapAmount"]]
+swap_token_type = [txObjs[0]["swapTokenType"], txObjs[1]["swapTokenType"]]
 
 const txArray = txLeaf.generateTxLeafArray(
-    from_x, from_y, to_x, to_y, tx_nonces, amounts, tx_token_types
+    from_x, from_y, to_x, to_y, tx_nonces, amounts, tx_token_types, swap_from_x, swap_from_y, swap_to_x, swap_to_y, swap_amount, swap_token_type
 )
 
+//console.log('txArray', txArray)
+
 const txLeafHashes = txLeaf.hashTxLeafArray(txArray)
-// console.log(txLeafHashes)
 
 const txTree = merkle.treeFromLeafArray(txLeafHashes)
 
@@ -100,7 +189,7 @@ for (jj = 0; jj < 2**TX_DEPTH; jj++){
 
 signingPrvKeys = new Array()
 from_accounts_idx.forEach(function(index){
-    signingPrvKeys.push(prvKeys[index - 1])
+    signingPrvKeys.push(prvKeys[index])
 })
 
 const signatures = txLeaf.signTxLeafHashArray(
@@ -118,12 +207,18 @@ const inputs = update.processTxArray(
     TX_DEPTH,
     BAL_DEPTH,
     pubKeys,
-    paddedTo16BalanceLeafArray,
+    balanceLeafArray,
     from_accounts_idx,
     to_accounts_idx,
     tx_nonces,
     amounts,
     tx_token_types,
+    swap_from_x,
+    swap_from_y,
+    swap_to_x,
+    swap_to_y,
+    swap_amount,
+    swap_token_type,	    
     signatures
 )
 

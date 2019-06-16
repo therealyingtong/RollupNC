@@ -5,7 +5,7 @@ const eddsa = require("../circomlib/src/eddsa.js");
 module.exports = {
 
     generateTxLeafArray: function(
-        from_x, from_y, to_x, to_y, nonces, amounts, token_types
+        from_x, from_y, to_x, to_y, nonces, amounts, token_types, swap_from_x, swap_from_y, swap_to_x, swap_to_y, swap_amounts, swap_token_types,
     ){
         if (Array.isArray(from_x)){
             txLeafArray = [];
@@ -18,6 +18,13 @@ module.exports = {
                 leaf['nonce'] = nonces[i];
                 leaf['amount'] = amounts[i];
                 leaf['token_type'] = token_types[i];
+		// Add ATOMIC SWAP fields
+                leaf['swap_from_x'] = swap_from_x[i];
+                leaf['swap_from_y'] = swap_from_y[i];
+                leaf['swap_to_x'] = swap_to_x[i];
+                leaf['swap_to_y'] = swap_to_y[i];
+                leaf['swap_amount'] = swap_amounts[i];
+                leaf['swap_token_type'] = swap_token_types[i];
                 txLeafArray.push(leaf);
                 // console.log(i, leaf)
             }
@@ -39,7 +46,13 @@ module.exports = {
                     leafArray[i]['to_y'].toString(),
                     leafArray[i]['nonce'].toString(),
                     leafArray[i]['amount'].toString(),
-                    leafArray[i]['token_type'].toString()
+                    leafArray[i]['token_type'].toString(),
+                    leafArray[i]['swap_from_x'].toString(),
+                    leafArray[i]['swap_from_y'].toString(),
+                    leafArray[i]['swap_to_x'].toString(),
+                    leafArray[i]['swap_to_y'].toString(),
+                    leafArray[i]['swap_amount'].toString(),
+                    leafArray[i]['swap_token_type'].toString()		   
                 ])
                 txLeafHashArray.push(leafHash)
             }
