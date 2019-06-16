@@ -31,7 +31,7 @@ const balanceArray = [Alice.account, Bob.account, Charlie.account, Daenerys.acco
 txTree = new Tree(txArray, TX_DEPTH)
 balanceTree = new Tree(balanceArray, BAL_DEPTH)
 
-
+// TODO: move this to update.js
 function createEmptyHistory() {
   const historyFields = [
     'nonceFrom', 'nonceTo',
@@ -44,18 +44,22 @@ function createEmptyHistory() {
   return history
 }
 
-
+// TODO: move this to update.js
 function apply_tx(tx, balances, history) {
   const fromAccount = balances[tx._fromAccount.index]
   if (fromAccount.balance < tx.amount) {
     throw `insufficient fund: want to send ${tx.amount} from a balance of ${fromAccount.balance}`
   }
+  //TODO: nonce check
   fromAccount.balance -= tx.amount;
   balances[tx._fromAccount.index].nonce += 1;
   balances[tx._toAccount.index].balance += tx.amount;
+
+  //TODO: records proofs and roots in the history
   return [balances, history]
 }
 
+// TODO: move this to update.js
 function apply_state_transitions(txs, balanceTree) {
   let _balances = balanceTree.leaves;
   let history = createEmptyHistory(txs.length)
@@ -65,14 +69,9 @@ function apply_state_transitions(txs, balanceTree) {
   return [_balances, history]
 }
 
-
 function createSnarkInput(txTree, balanceTree) {
 
-  function lookupBalanceField(senderOrReceiver, balanceField) {
-    return txTree.leaves.map(tx =>
-      balanceTree.leaves[tx[senderOrReceiver].index][balanceField]
-    )
-  }
+  //TODO: const  [postBalances, history] = apply_state_transitions(txs, balanceTree)
 
   return {
     tx_root: txTree.root,
@@ -81,11 +80,12 @@ function createSnarkInput(txTree, balanceTree) {
 
     current_state: balanceTree.root,
 
-    intermediate_roots: module.exports.stringifyArray(intermediateRoots.slice(0, 2 ** (tx_depth + 1))),
-    paths2root_from: module.exports.stringifyArrayOfArrays(fromProofs),
-    paths2root_to: module.exports.stringifyArrayOfArrays(newToProofs),
-    paths2root_from_pos: fromPosArray,
-    paths2root_to_pos: toPosArray,
+    //TODO: Get these values from history
+    intermediate_roots: [],
+    paths2root_from: [],
+    paths2root_to:[],
+    paths2root_from_pos: [],
+    paths2root_to_pos: [],
 
     from_x: txTree.getLeafFieldArray('fromX'),
     from_y: txTree.getLeafFieldArray('fromY'),
@@ -93,16 +93,17 @@ function createSnarkInput(txTree, balanceTree) {
     R8y: txTree.getLeafFieldArray('R2'),
     S: txTree.getLeafFieldArray('S'),
 
-    nonce_from: lookupBalanceField('_fromAccount', 'nonce'),
+    nonce_from: [], //TODO: Get this value from history
     to_x: txTree.getLeafFieldArray('toX'),
     to_y: txTree.getLeafFieldArray('toY'),
-    nonce_to: lookupBalanceField('_toAccount', 'nonce'),
+    nonce_to: [], //TODO: Get this value from history
     amount: txTree.getLeafFieldArray('amount'),
 
-    token_balance_from: lookupBalanceField('_fromAccount', 'balance'),
-    token_balance_to: lookupBalanceField('_toAccount', 'balance'),
-    token_type_from: lookupBalanceField('_fromAccount', 'tokenType'),
-    token_type_to: lookupBalanceField('_toAccount', 'tokenType'),
+    //TODO: Get these values from history
+    token_balance_from: [],
+    token_balance_to: [],
+    token_type_from: [],
+    token_type_to: [],
   }
 }
 
