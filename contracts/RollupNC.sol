@@ -19,7 +19,7 @@ contract IMiMCMerkle {
         uint256[2] memory
     ) public view returns(uint) {}
     function hashBalance(uint[5] memory) public view returns(uint){}
-    function hashTx(uint[6] memory) public view returns(uint) {}
+    function hashTx(uint[7] memory) public view returns(uint) {}
     function hashPair(uint[2] memory) public view returns(uint){}
     function hashHeight2Tree(uint[4] memory) public view returns(uint){}
 
@@ -47,8 +47,8 @@ contract RollupNC is Verifier, WithdrawSigVerifier {
     uint256 public currentRoot;
     address public coordinator;
     uint256[] public pendingDeposits;
-    uint public queueNumber = 0;
-    uint public depositSubtreeHeight = 0;
+    uint public queueNumber;
+    uint public depositSubtreeHeight;
     uint256 public updateNumber;
 
     uint256 public BAL_DEPTH = 4;
@@ -73,6 +73,8 @@ contract RollupNC is Verifier, WithdrawSigVerifier {
         tokenRegistry = ITokenRegistry(_tokenRegistryAddr);
         currentRoot = mimcMerkle.zeroCache(BAL_DEPTH);
         coordinator = msg.sender;
+        queueNumber = 0;
+        depositSubtreeHeight = 0;
         updateNumber = 0;
     }
 
@@ -121,31 +123,22 @@ contract RollupNC is Verifier, WithdrawSigVerifier {
         pendingDeposits.push(depositHash);
         emit RequestDeposit(pubkey, amount, tokenType);
         queueNumber++;
-        depositSubtreeHeight = 0;
+        uint tmpDepositSubtreeHeight = 0;
         uint tmp = queueNumber;
-        if(tmp % 2 == 0){
+        while(tmp % 2 == 0){
             pendingDeposits[pendingDeposits.length - 2] = mimcMerkle.hashPair(
                 [pendingDeposits[pendingDeposits.length - 2],
                 pendingDeposits[pendingDeposits.length - 1]]);
             removeDeposit(pendingDeposits.length - 1);
             tmp = tmp / 2;
-            depositSubtreeHeight++;
-            // uint256 cd = mimcMerkle.hashPair(
-            //     [pendingDeposits[0], pendingDeposits[1]]);
-            // delete pendingDeposits;
-            // currentDeposits.push(cd);
-            // cdLength ++;
-            // uint tempLength = cdLength;
-            // while(tempLength % 2 == 0 && cdLength != 0){
-            //     currentDeposits[currentDeposits.length - 2] = mimcMerkle.hashPair(
-            //         [currentDeposits[currentDeposits.length - 1],
-            //         currentDeposits[currentDeposits.length - 2]]
-            //     );
-            //     currentDeposits.length --;
-            //     tempLength = tempLength / 2;
-            // }
+            tmpDepositSubtreeHeight++;
+        }
+        if (tmpDepositSubtreeHeight > depositSubtreeHeight){
+            depositSubtreeHeight = tmpDepositSubtreeHeight;
         }
     }
+
+
 
     // coordinator adds certain number of deposits to balance tree
     // coordinator must specify subtree index in the tree since the deposits
@@ -154,6 +147,8 @@ contract RollupNC is Verifier, WithdrawSigVerifier {
         uint[2] memory subtreePosition,
         uint[2] memory subtreeProof
     ) public onlyCoordinator returns(uint256){
+        require(depositSubtreeHeight == 2, "depositSubtreeHeight check failed");
+        // require(queueNumber == 4, "queueNumber check failed");
         uint emptySubtreeRoot = mimcMerkle.zeroCache(2); //empty subtree of height 2
         require(currentRoot == mimcMerkle.getRootFromProof2(
             emptySubtreeRoot, subtreePosition, subtreeProof),
@@ -179,7 +174,7 @@ contract RollupNC is Verifier, WithdrawSigVerifier {
         uint txLeaf = mimcMerkle.hashTx([
             pubkey_from[0], pubkey_from[1],
             0, 0, //withdraw to zero address
-            txInfo[1], txInfo[2]
+            txInfo[0], txInfo[1], txInfo[2]
         ]);
         require(txRoot == mimcMerkle.getRootFromProof2(
             txLeaf, positionAndProof[0], positionAndProof[1]),
@@ -221,5 +216,4 @@ contract RollupNC is Verifier, WithdrawSigVerifier {
         pendingDeposits.length--;
         return pendingDeposits;
     }
-
 }

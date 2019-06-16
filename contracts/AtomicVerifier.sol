@@ -1,1 +1,0 @@
-// fill in with new circuit's verifier.sol
