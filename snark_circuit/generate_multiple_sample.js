@@ -80,9 +80,9 @@ tx2 = {
     "swapAmount": 0
 }
 
+//balanceObjs = [balance1, balance2, balance3, balance4 ]
+//txObjs = [tx1, tx2];
 
-balanceObjs = []
-txObjs = [tx1, tx2];
 
 function balanceCmp(a, b) {
     if (a.id < b.id) {
@@ -93,10 +93,10 @@ function balanceCmp(a, b) {
     }
     return 0
 }
-
+balanceObjs = []
+txObjs = []
 // read in files from disk
 if (process.argv.length >= 4) {
-    balanceObjs = []
 //    txObjs = []
     balanceDir = process.argv[2];
     txDir = process.argv[3];
@@ -105,9 +105,15 @@ if (process.argv.length >= 4) {
 //    console.log('balanceDir', balanceDir)
 
     fs.readdirSync(balanceDir).forEach(function (file) {
-	balanceObjs.push(JSON.parse(fs.readFileSync(balanceDir+file)))
+	balanceObjs.push(JSON.parse(fs.readFileSync(balanceDir+'/'+file)))
     });
     balanceObjs.sort(balanceCmp)
+
+    fs.readdirSync(txDir).forEach(function (file) {
+	txObjs.push(JSON.parse(fs.readFileSync(txDir+'/'+file)))
+    });
+} else {
+    throw("please provide paths to input directories")
 }
 
 // console.log(merkle.getZeroCache(zeroLeafHash, 5))
