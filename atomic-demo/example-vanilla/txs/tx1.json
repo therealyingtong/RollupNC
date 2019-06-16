@@ -1,0 +1,13 @@
+{                                                                                            
+    "fromID": 0,                                                                                   
+    "toID": 2,                                                                                     
+    "nonce": 0,                                                                                    
+    "amount": 500,                                                                                 
+    "tokenType": 1,                                                                                
+    "swapFromX": 0,                                                                                
+    "swapFromY": 0,                                                                                
+    "swapToX": 0,                                                                                  
+    "swapToY": 0,                                                                                  
+    "swapTokenType": 0,                                                                            
+    "swapAmount": 0                                                                                
+} 
